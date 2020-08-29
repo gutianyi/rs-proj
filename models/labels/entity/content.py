@@ -23,6 +23,25 @@
 #               佛祖保佑         永无BUG
 #!/usr/bin/env python 
 # -*- coding: utf-8 -*-
-# @Time    : 16/8/2020 11:53 上午
+# @Time    : 28/8/2020 9:22 下午
 # @Author  : GU Tianyi
-# @File    : tf_idf.py
+# @File    : content.py
+
+from sqlalchemy import Column,Integer,DateTime,Text
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+from dao.mysql_db import Mysql
+
+class Content(Base):
+    __tablename__ = 'data'
+    id = Column(Integer(), primary_key=True)
+    time = Column(DateTime())
+    title = Column(Text())
+    content = Column(Text())
+    type = Column(Text())
+
+    def __init__(self):
+        mysql = Mysql()
+        engine = mysql.engine
+        Base.metadata.create_all(engine)

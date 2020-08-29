@@ -23,6 +23,16 @@
 #               佛祖保佑         永无BUG
 #!/usr/bin/env python 
 # -*- coding: utf-8 -*-
-# @Time    : 16/8/2020 11:53 上午
+# @Time    : 28/8/2020 9:10 下午
 # @Author  : GU Tianyi
-# @File    : test_rank.py
+# @File    : redis_db.py
+
+import redis
+
+class Redis(object):
+    def __init__(self):
+        self.redis = redis.StrictRedis(host='r-m5e8kd481g3boqztfhpd.redis.rds.aliyuncs.com',
+                                       port=6379,
+                                       password='Ipeaking123',
+                                       db=9,
+                                       decode_responses=True)

@@ -17,24 +17,38 @@
 #     =====`-.____`.___ \_____/___.-`___.-'=====
 #                       `=---='
 #
-#                  -*- coding: utf-8 -*-
+#                -*- coding: utf-8 -*-
 #     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #               佛祖保佑         永无BUG
-#!/usr/bin/env python
-# @Time    : 16/8/2020 11:16 上午
+#!/usr/bin/env python 
+# -*- coding: utf-8 -*-
+# @Time    : 28/8/2020 9:37 下午
 # @Author  : GU Tianyi
-# @File    : mysql_db.py
+# @File    : simple_rec.py
 
-import sys
-sys.path.append('..')
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from dao import redis_db
+from dao.mongo_db import MongoDB
 
 
-class Mysql(object):
+class SimpleRecList(object):
     def __init__(self):
-        Base = declarative_base()
-        self.engine = create_engine("mysql+pymysql://root:123456@47.104.154.74:3306/sina", encoding='utf-8')
-        self._DBSession = sessionmaker(bind=self.engine)
+        self._redis = redis_db.Redis()
+        self.mongo = MongoDB(db='loginfo')
+        self.db_loginfo = self.mongo.db_loginfo
+        self.collection = self.db_loginfo['content_labels']
+
+    def get_news_order_by_time(self):
+        data = self.collection.find().sort([{"$news_date", -1}])
+        count = 10000
+
+        for news in data:
+            self._redis.redis.zadd("rec_list", {str(news['_id']): count})
+            count -= 1
+            if count % 10 == 0:
+                print(count)
+
+
+if __name__ == '__main__':
+    simple = SimpleRecList()
+    simple.get_news_order_by_time()

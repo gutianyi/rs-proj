@@ -27,42 +27,55 @@
 # @Author  : GU Tianyi
 # @File    : content_label.py
 import re
-import datetime
-
+from datetime import datetime
+from dao.mongo_db import MongoDB
+from dao.mysql_db import Mysql
+from models.keywords.tfidf import Segment
+from sqlalchemy import distinct
+from models.labels.entity.content import Content
 
 class ContentLabel(object):
     def __init__(self):
-        return
+        self.seg = Segment(stopword_files=[], userdict_files=[])
+        self.engine = Mysql()
+        self.session = self.engine._DBSession()
+        self.mongo = MongoDB(db='loginfo')
+        self.db_loginfo = self.mongo.db_loginfo
+        self.collection = self.db_loginfo['content_labels']
 
-    def get_keywords(self, contents, nums = 10):
-        return
 
-    def get_type(self):
-        return
+    def get_data_from_mysql(self):
+        types = self.session.query(distinct(Content.type))
+        for i in types:
+            print(i[0])
+            res = self.session.query(Content).filter(Content.type == i[0])
+            if res.count() > 0:
+                for x in res.all():
+                    keywords = self.get_keywords(x.content, 10)
+                    word_nums = self.get_words_nums(x.content)
+                    times = x.time
+                    create_time = datetime.utcnow()
+                    content_collection = dict()
+                    content_collection['describe'] = x.content
+                    content_collection['keywords'] = keywords
+                    content_collection['word_num'] = word_nums
+                    content_collection['news_date'] = times
+                    content_collection['hot_heat'] = 10000
+                    content_collection['type'] = x.type
+                    content_collection['create_time'] = create_time
+                    self.collection.insert_one(content_collection)
 
-    def get_news_time(self):
-        return
+    def get_keywords(self, contents, nums=10):
+        keywords = self.seg.extract_keyword(contents)[:nums]
+        return keywords
+
 
     def get_words_nums(self, contents):
-        ch = re.findall('[\u4e00-\u9fa5]', contents)
+        ch = re.findall('([\u4e00-\u9fa5])', contents)
         nums = len(ch)
         return nums
 
-    def insert_to_mongodb(self):
-        content_label_dict = dict()
-        collection = 'content_label'
-        times = datetime.datetime.utcnow()
-        content_label_dict['time'] = times
-        content_label_dict['keywords'] = self.get_keywords('')
-        content_label_dict['words_nums'] = self.get_words_nums('')
-
-        return
 
 if __name__ == '__main__':
     content_label = ContentLabel()
-    text = '标题数目:阿'
-    content_label.get_keywords(text)
-    content_label.get_news_time()
-    print(content_label.get_words_nums(text))
-    content_label.get_type()
-    content_label.insert_to_mongodb()
+    content_label.get_data_from_mysql()
